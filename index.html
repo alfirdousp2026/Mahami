@@ -65,8 +65,12 @@ function defaults(){return{nid:20,link:"",pr:{},done:{},cnt:{},mem:{},rev:{},tas
 T(1,"الصلاة","خلال اليوم"),T(2,"أذكار الصلاة","خلال اليوم"),T(3,"النوافل","خلال اليوم"),T(4,"الورد اليومي","الصباح"),T(5,"صلاة الضحى","الصباح"),T(6,"قيام الليل","قبل النوم"),T(7,"وتر قبل النوم","قبل النوم"),T(8,"الأذكار","الصباح"),T(9,"حفظ ذكر يوميًا","خلال اليوم"),T(10,"حفظ حديث","الصباح"),T(11,"النوم على وضوء","قبل النوم"),T(12,"ورد الصلاة على النبي","خلال اليوم",100),T(13,"حفظ آية يوميًا","الصباح"),T(14,"صدقة الجمعة","الجمعة"),T(15,"قراءة كتب دينية","خلال اليوم"),T(16,"بلّغوا عني ولو آية","خلال اليوم"),T(17,"الكهف يوم الجمعة","الجمعة"),T(18,"ذكر الله","خلال اليوم",100),T(19,"أدعية القرآن والسنة","خلال اليوم")]}}
 var S=null;
 try{S=JSON.parse(localStorage.getItem("mahami-v2")||"null")}catch(e){}
+var hadLS=!!S;
 if(!S){S=defaults();try{var o=JSON.parse(localStorage.getItem("mahami-v1")||"{}");for(var k in o)S.done[k]=o[k].map(function(i){return i+1})}catch(e){}}
-function save(){try{localStorage.setItem("mahami-v2",JSON.stringify(S))}catch(e){}}
+var bad=false,idb=null;
+function idbOpen(cb){try{var r=indexedDB.open("mahami",1);r.onupgradeneeded=function(){r.result.createObjectStore("s")};r.onsuccess=function(){idb=r.result;cb&&cb()};r.onerror=function(){cb&&cb()}}catch(e){cb&&cb()}}
+function save(){var j=JSON.stringify(S);try{localStorage.setItem("mahami-v2",j);if(localStorage.getItem("mahami-v2")!==j)bad=true}catch(e){bad=true}
+ try{if(idb)idb.transaction("s","readwrite").objectStore("s").put(j,"S")}catch(e){}}
 (function(){if(S.v3)return;S.v3=1;
 var add=[["صيام الاثنين","الصباح",{w:[2],nr:1}],["صيام الخميس","الصباح",{w:[5],nr:1}],["صيام الأيام البيض","الصباح",{bid:1,nr:1}],["صيام رمضان","الصباح",{ram:1}],["صلاة التراويح","قبل النوم",{ram:1}],["ورد القرآن في رمضان","الصباح",{ram:1}],["قيام العشر الأواخر","قبل النوم",{ram:2}]];
 add.forEach(function(a){var t=T(S.nid++,a[0],a[1]);for(var k in a[2])t[k]=a[2][k];S.tasks.push(t)});
@@ -240,10 +244,14 @@ function draw(){var st=streak();if(st>(S.best||0)){S.best=st;save()}if(pct(now)>
   var tb=document.getElementById("tabs");tb.innerHTML="";
   ["اليوم","الأذكار","الورد","الإحصائيات","الحفظ","المزيد","السجل","الإعدادات"].forEach(function(n,i){var b=h("button",i===tab?"on":"",n);b.onclick=function(){tab=i;draw()};tb.appendChild(b)});
   var v=document.getElementById("v");v.innerHTML="";
+  if(bad&&!idb)v.appendChild(h("div","card hl","⚠ المتصفح يمنع حفظ البيانات هنا، فلن تبقى بعد الإغلاق. افتح التطبيق من المتصفح مباشرة أو ثبّته، وصدّر نسخة احتياطية من الإعدادات."));
   [vToday,vAd,vWird,vStats,vMem,vMore,vLog,vSet][tab](v)}
 var dip=null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();dip=e;if(tab===7)draw()});
 if("serviceWorker"in navigator)window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});
 head();draw();
+idbOpen(function(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+ if(!idb)return;var g=idb.transaction("s").objectStore("s").get("S");
+ g.onsuccess=function(){var j=g.result;if(j&&!hadLS){try{S=JSON.parse(j);draw()}catch(e){}}else save()}});
 setInterval(function(){now=new Date();if(tab===0)draw()},60000);
 </script>
 </body>
