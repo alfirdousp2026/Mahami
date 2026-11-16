@@ -1,5 +1,5 @@
-var V="mahami-v2";
-var FILES=["./","./index.html","./manifest.webmanifest","./icons/icon-192.png","./icons/icon-512.png"];
+var V="mahami-v4";
+var FILES=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",function(e){e.waitUntil(caches.open(V).then(function(c){return c.addAll(FILES)}));self.skipWaiting()});
 self.addEventListener("activate",function(e){e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.filter(function(k){return k!==V}).map(function(k){return caches.delete(k)}))}));self.clients.claim()});
 self.addEventListener("fetch",function(e){
